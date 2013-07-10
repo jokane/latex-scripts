@@ -59,8 +59,10 @@ sub runLaTeX {
 }
 
 sub go {
+  my $afterLaTeXCommand;
 	if(!GetOptions(
-				'bibtex' => \$bibTeX
+				'bibtex' => \$bibTeX,
+        'after-latex=s' => \$afterLaTeXCommand
 				)) {
 		exit(1);
 	}

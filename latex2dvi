@@ -28,6 +28,8 @@
 #    6/17/2013 - Don't count warnings toward the maximum printed lines.  This
 #                avoids the problem where important errors count not be seen in
 #                documents with lots of warnings.
+#    7/10/2013 - Added "after-latex" option, to specify a command that should be
+#                executed after the first pass of LaTeX.
 
 use strict;
 use Getopt::Long;
@@ -37,147 +39,154 @@ use vars qw( $bibTeX );
 sub getFile {
 # Reads in a file and returns its contents.
 # Complains if the file cannot be opened.
-	my ($fname) = shift;
-	my ($line, $file);
-	if(!open(IN,"<$fname")) {
-		print "warning: cannot open $fname; not scanning\n";
-		return "";
-	}
+  my ($fname) = shift;
+  my ($line, $file);
+  if(!open(IN,"<$fname")) {
+    print "warning: cannot open $fname; not scanning\n";
+    return "";
+  }
 
-	$file = "";
-	while($line = <IN>) {
-		$file .= $line;
-	}
-	return $file;
+  $file = "";
+  while($line = <IN>) {
+    $file .= $line;
+  }
+  return $file;
 }
 
 sub runLaTeX {
-	my $root = shift;
-	my $cmd = "latex --interaction batchmode $root > /dev/null";
-	print "$cmd\n";
-	system($cmd);
+  my $root = shift;
+  my $cmd = "latex --interaction batchmode $root > /dev/null";
+  print "$cmd\n";
+  system($cmd);
 }
 
 sub go {
   my $afterLaTeXCommand;
-	if(!GetOptions(
-				'bibtex' => \$bibTeX,
-        'after-latex=s' => \$afterLaTeXCommand
-				)) {
-		exit(1);
-	}
+  if(!GetOptions(
+    'bibtex' => \$bibTeX,
+    'after-latex=s' => \$afterLaTeXCommand
+  )) {
+    exit(1);
+  }
 
-	if(!defined $ARGV[0]) {
-		print STDERR "Usage: $0 <latex source file>\n";
-	}
+  if(!defined $ARGV[0]) {
+    print STDERR "Usage: $0 <latex source file>\n";
+  }
 
-	# Get the root filename.
-	my $root = $ARGV[0];
-	$root =~ s/\.tex$//;
+  # Get the root filename.
+  my $root = $ARGV[0];
+  $root =~ s/\.tex$//;
 
-	# Keep count of how many times we've run LaTeX.
-	my $k = 0;
-	my $maxTries = 10;
+  # Keep count of how many times we've run LaTeX.
+  my $k = 0;
+  my $maxTries = 10;
 
-	# Get a log file to start with.  LaTeX once if necessary.
-	if(!-e "$root.log") {
-		runLaTeX($root);
-		$k++;
-	}
-	my $lastLog = getFile("$root.log");
+  # Get a log file to start with.  LaTeX once if necessary.
+  if(!-e "$root.log") {
+    runLaTeX($root);
+    $k++;
+  }
+  my $lastLog = getFile("$root.log");
 
-	# Keep running LaTeX until the log file stops changing.
-	my $log = "";
-	my $bibOK = 0;
-	my $idxOK = 0;
-	while($k < $maxTries && $log ne $lastLog) {
-		runLaTeX($root);
-		$k++;
+  # Keep running LaTeX until the log file stops changing.
+  my $log = "";
+  my $bibOK = 0;
+  my $idxOK = 0;
+  while($k < $maxTries && $log ne $lastLog) {
+    runLaTeX($root);
+    $k++;
 
-		if(!$bibOK) {
-			# Look to see if there are any citations in the AUX file.  If so,
-			# run BibTeX to handle them.
-			my $aux = getFile("$root.aux");
-			if($aux =~ "citation") {
-				my $cmd = "bibtex -terse $root";
-				print "$cmd\n";
-				system($cmd);
-			}
-			$bibOK = 1;
-		}
+    if(!$bibOK) {
+      # Look to see if there are any citations in the AUX file.  If so,
+      # run BibTeX to handle them.
+      my $aux = getFile("$root.aux");
+      if($aux =~ "citation") {
+        my $cmd = "bibtex -terse $root";
+        print "$cmd\n";
+        system($cmd);
+      }
+      $bibOK = 1;
+    }
 
-		# If the document contains an index, run makeindex to keep it up-to-date.
-		if(!$idxOK && -e "$root.idx") {
-			my $cmd = "makeindex -q $root";
-			print "$cmd\n";
-			system($cmd);
-			$idxOK = 1;
-		}
+    # If the document contains an index, run makeindex to keep it up-to-date.
+    if(!$idxOK && -e "$root.idx") {
+      my $cmd = "makeindex -q $root";
+      print "$cmd\n";
+      system($cmd);
+      $idxOK = 1;
+    }
 
-		$lastLog = $log;
-		$log = getFile("$root.log");
-	}
+    # If we got any other commands to run after the first LaTeX, run them.
+    if(defined $afterLaTeXCommand) {
+      print "$afterLaTeXCommand\n";
+      system($afterLaTeXCommand);
+      undef $afterLaTeXCommand;
+    }
 
-	# Show the relevant parts of the output.  At the same time, figure
-	# out if LaTeX was successful.
-	my $printNext = 0;
-	my $retCode = 0;
-	my $printMax = 10;
-	my $numPrinted = 0;
-	my $maxWarned = 0;
-	open LOG, "<$root.log";
-	while(my $line = <LOG>) {
-		if($line =~ /Warning/) {
-			$printNext = 1;
-		}
+    $lastLog = $log;
+    $log = getFile("$root.log");
+  }
 
-		if($line =~ /Error/) {
-			$printNext = 1;
-			$numPrinted++;
-			$retCode = 1;
-		}
+  # Show the relevant parts of the output.  At the same time, figure
+  # out if LaTeX was successful.
+  my $printNext = 0;
+  my $retCode = 0;
+  my $printMax = 10;
+  my $numPrinted = 0;
+  my $maxWarned = 0;
+  open LOG, "<$root.log";
+  while(my $line = <LOG>) {
+    if($line =~ /Warning/) {
+      $printNext = 1;
+    }
 
-		if($line =~ /Runaway/) {
-			$printNext = 4;
-			$numPrinted++;
-			$retCode = 1;
-		}
+    if($line =~ /Error/) {
+      $printNext = 1;
+      $numPrinted++;
+      $retCode = 1;
+    }
 
-		if($line =~ /^!/) {
-			$printNext = 4;
-			$numPrinted++;
-			$retCode = 1;
-		}
+    if($line =~ /Runaway/) {
+      $printNext = 4;
+      $numPrinted++;
+      $retCode = 1;
+    }
 
-		if($printNext > 0) {
-			if($numPrinted < $printMax) {
-				print $line;
-			}
+    if($line =~ /^!/) {
+      $printNext = 4;
+      $numPrinted++;
+      $retCode = 1;
+    }
 
-			if($numPrinted >= $printMax && !$maxWarned) {
-				$maxWarned = 1;
-				print "latex2dvi: Hiding additional messages.\n";
-			}
-			$printNext--;
-		}
+    if($printNext > 0) {
+      if($numPrinted < $printMax) {
+        print $line;
+      }
 
-	}
-	close LOG;
+      if($numPrinted >= $printMax && !$maxWarned) {
+        $maxWarned = 1;
+        print "latex2dvi: Hiding additional messages.\n";
+      }
+      $printNext--;
+    }
 
-	# Let the user know if we just gave up.
-	if($k >= $maxTries) {
-		print STDERR "$0: Ran LaTeX $k times, but $root.log was different each time.\n";
-		print STDERR "$0: Giving up.\n";
-		exit(1);
-	}
+  }
+  close LOG;
 
-	# Remove the DVI if an error occured.
-	if($retCode == 1) {
-		unlink "$root.dvi";
-	}
+  # Let the user know if we just gave up.
+  if($k >= $maxTries) {
+    print STDERR "$0: Ran LaTeX $k times, but $root.log was different each time.\n";
+    print STDERR "$0: Giving up.\n";
+    exit(1);
+  }
 
-	# Done!
-	exit($retCode);
+  # Remove the DVI if an error occured.
+  if($retCode == 1) {
+    unlink "$root.dvi";
+  }
+
+  # Done!
+  exit($retCode);
 }
 
 

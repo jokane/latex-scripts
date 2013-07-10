@@ -74,9 +74,9 @@
 #              fig2eps typesets text labels using LaTeX.
 #    5/15/13 - Disabled messages from dvips option overrides.  Made these
 #              overrides case-insensitive.
-#    7/10/13 - Added "texmake:latex2dvi" for passing arugments to latex2dvi.
-#              Changed "noispell" to "texmake:noispell" to move toward consistent
-#              embedded commands.
+#    7/10/13 - Added "texmake:latex2dvi" for passing arugments to latex2dvi and
+#              "texmake:nodepend" for suppressing dependencies.  Changed "noispell"
+#              to "texmake:noispell" to move toward consistent embedded commands.
 #
 # This software is provided without warranty of any kind.  You may distribute
 # it freely for non-commercial purposes.
@@ -328,6 +328,12 @@ sub fileDeps {
 		foreach my $bib (split /,/, $1) {
 			$deps .= " $bib.bib";
 		}
+	}
+
+  # Explicit non-dependencies.
+	while($fileWithComments =~ s/texmake:nodepend (.*)//) {
+		my $explicitNoDep = $1;
+		$deps =~ s/$explicitNoDep//;
 	}
 	
 	return $deps;

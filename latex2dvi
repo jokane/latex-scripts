@@ -30,6 +30,8 @@
 #                documents with lots of warnings.
 #    7/10/2013 - Added "after-latex" option, to specify a command that should be
 #                executed after the first pass of LaTeX.
+#    8/09/2013 - Added "makeindex-options" options, to pass things through to
+#                makeindex.  Useful for style files.
 
 use strict;
 use Getopt::Long;
@@ -62,9 +64,11 @@ sub runLaTeX {
 
 sub go {
   my $afterLaTeXCommand;
+  my $makeIndexOptions = "";
   if(!GetOptions(
     'bibtex' => \$bibTeX,
-    'after-latex=s' => \$afterLaTeXCommand
+    'after-latex=s' => \$afterLaTeXCommand,
+    'makeindex-options=s' => \$makeIndexOptions
   )) {
     exit(1);
   }
@@ -110,7 +114,7 @@ sub go {
 
     # If the document contains an index, run makeindex to keep it up-to-date.
     if(!$idxOK && -e "$root.idx") {
-      my $cmd = "makeindex -q $root";
+      my $cmd = "makeindex -q $root $makeIndexOptions";
       print "$cmd\n";
       system($cmd);
       $idxOK = 1;

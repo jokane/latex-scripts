@@ -32,7 +32,7 @@
 #                executed after the first pass of LaTeX.
 #    8/09/2013 - Added "makeindex-options" options, to pass things through to
 #                makeindex.  Useful for style files.
-#    8/10/2013 - Added "after-makeindex".
+#    8/10/2013 - Added "after-makeindex" and "before-makeindex".
 
 use strict;
 use Getopt::Long;
@@ -65,11 +65,13 @@ sub runLaTeX {
 
 sub go {
   my $afterLaTeXCommand;
+  my $beforeMakeIndexCommand;
   my $afterMakeIndexCommand;
   my $makeIndexOptions = "";
   if(!GetOptions(
     'bibtex' => \$bibTeX,
     'after-latex=s' => \$afterLaTeXCommand,
+    'before-makeindex=s' => \$beforeMakeIndexCommand,
     'after-makeindex=s' => \$afterMakeIndexCommand,
     'makeindex-options=s' => \$makeIndexOptions
   )) {
@@ -117,6 +119,11 @@ sub go {
 
     # If the document contains an index, run makeindex to keep it up-to-date.
     if(!$idxOK && -e "$root.idx") {
+      if(defined $beforeMakeIndexCommand) {
+        print "$beforeMakeIndexCommand\n";
+        system($beforeMakeIndexCommand);
+        undef $beforeMakeIndexCommand;
+      }
       my $cmd = "makeindex -q $root $makeIndexOptions";
       print "$cmd\n";
       system($cmd);

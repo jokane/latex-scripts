@@ -5,3 +5,5 @@
 - Use PID-dependent temporary file name, to allow recursive texmake.
 - latex2dvi: Keep track of which file is active and label the error messages
   accordingly.
+- latex2dvi: Check error codes for custom before/after commands.  Fail when those commands fail.
+- latex2dvi: Show errors from makeindex.

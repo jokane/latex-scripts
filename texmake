@@ -77,6 +77,9 @@
 #    7/10/13 - Added "texmake:latex2dvi" for passing arugments to latex2dvi and
 #              "texmake:nodepend" for suppressing dependencies.  Changed "noispell"
 #              to "texmake:noispell" to move toward consistent embedded commands.
+#    8/11/13 - Added "texmake:ignore" to overrule the usual search for
+#              a documentclass to decide which TeX files are considered top-level
+#              docments.
 #
 # This software is provided without warranty of any kind.  You may distribute
 # it freely for non-commercial purposes.
@@ -660,8 +663,9 @@ sub main {
 
 	foreach my $texfile (split(/\n/, `ls *.tex 2>/dev/null`)) {
 		my $fileContents = getFile($texfile);
-		if($fileContents =~ /documentclass/ 
-			|| $fileContents =~ /documentstyle/
+		my $fileContentsWithComments = getFileWithComments($texfile);
+		if(($fileContents =~ /documentclass/ || $fileContents =~ /documentstyle/)
+			&& $fileContentsWithComments !~ /texmake:ignore/
 		) {
 			$texfile =~ /(.*)\.([^\.]*)$/;
 			my $root = $1;
@@ -675,7 +679,7 @@ sub main {
 			push @allFiles, "$root.pdf";
 
 		} else {
-			# print "No rules for $texfile: \\begin{document} is missing.\n";
+		  # print "No rules for $texfile: \\begin{document} is missing.\n";
 		}
 	}
 

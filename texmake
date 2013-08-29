@@ -80,6 +80,7 @@
 #    8/11/13 - Added "texmake:ignore" to overrule the usual search for
 #              a documentclass to decide which TeX files are considered top-level
 #              docments.
+#    8/29/13 - Fixed bugs for \include dependencies.  (via Nick Stiffler)
 #
 # This software is provided without warranty of any kind.  You may distribute
 # it freely for non-commercial purposes.
@@ -96,7 +97,7 @@ use vars qw(
 
 $TEMPMF = "Makefile.texmake";
 #$PS_TO_PDF = "ps2pdf14 -dCompatibilityLevel=1.4 -dEmbedAllFonts=true -dPDFSETTINGS=/prepress ";  # For (better) IEEE compatibility
-$PS_TO_PDF = "ps2pdf -dNOSAFER ";  # To work correctly with powerdot
+$PS_TO_PDF = "ps2pdf -dNOSAFER -dEmbedAllFonts=true ";  # To work correctly with powerdot
 
 sub getFile {
 # Reads in a file and returns its contents after stripping out TeX-style
@@ -259,7 +260,6 @@ sub fileDeps {
 	) {
 		my $picture = $2;
 		next if($picture =~ /^#[0-9]*$/); # ignore passed-in parameters, ie #1
-		# if(!($picture =~ /.*\.[^.]*/)) {
 		if(!($picture =~ /\.[^\/]*$/)) {
 			$deps .= " $picture.$graphicsExt";
 			enqueueFile("$picture.$graphicsExt");
@@ -275,8 +275,13 @@ sub fileDeps {
 	}
 
 	while($file =~ s/\\include\{([^}]*)\}//) {
-		$deps .= " $1";
-		enqueueFile($1);
+		my $temp = $1;
+		next if($temp =~ /\\/); # Skip names with \'s.
+		if(!($temp =~ /\./)) {
+			$temp .= ".tex";
+		}
+		$deps .= " $temp " . fileDeps($temp, $graphicsExt, $baseFile);
+		enqueueFile($temp);
 	}
 	
 	while($file =~ s/\\input\{([^}]*)\}//) {
@@ -394,7 +399,6 @@ sub fromDVI {
 	$file = getFileWithComments("$root.tex");
 	if($file =~ /\%.*dvips:(.*)/i) {
 		$dvipsops = $1;
-		# print "Overriding dvips options for $root.dvi:$dvipsops\n";
 	}
 
 	# 1.4: Actually generate the commands for dvips.

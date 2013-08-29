@@ -33,6 +33,7 @@
 #    8/09/2013 - Added "makeindex-options" options, to pass things through to
 #                makeindex.  Useful for style files.
 #    8/10/2013 - Added "after-makeindex" and "before-makeindex".
+#    8/28/2013 - Added "before-latex".  (via Nick Stiffler)
 
 use strict;
 use Getopt::Long;
@@ -64,12 +65,14 @@ sub runLaTeX {
 }
 
 sub go {
+  my $beforeLaTeXCommand;
   my $afterLaTeXCommand;
   my $beforeMakeIndexCommand;
   my $afterMakeIndexCommand;
   my $makeIndexOptions = "";
   if(!GetOptions(
     'bibtex' => \$bibTeX,
+    'before-latex=s' => \$beforeLaTeXCommand,
     'after-latex=s' => \$afterLaTeXCommand,
     'before-makeindex=s' => \$beforeMakeIndexCommand,
     'after-makeindex=s' => \$afterMakeIndexCommand,
@@ -80,6 +83,12 @@ sub go {
 
   if(!defined $ARGV[0]) {
     print STDERR "Usage: $0 <latex source file>\n";
+  }
+
+  # If we got any other commands to run before the first LaTeX, run them.
+  if(defined $beforeLaTeXCommand) {
+    print "$beforeLaTeXCommand\n";
+    system($beforeLaTeXCommand);
   }
 
   # Get the root filename.

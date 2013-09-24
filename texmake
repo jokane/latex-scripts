@@ -81,6 +81,8 @@
 #              a documentclass to decide which TeX files are considered top-level
 #              docments.
 #    8/29/13 - Fixed bugs for \include dependencies.  (via Nick Stiffler)
+#    9/23/13 - Added partial support for Asymptote figures.  Does not yet check
+#              internal dependencies.
 #
 # This software is provided without warranty of any kind.  You may distribute
 # it freely for non-commercial purposes.
@@ -559,6 +561,14 @@ sub epsRules {
 		print MF "\tgnuplot $root.gpi\n";
 		$cleanTrash .= " $root.eps";
 		figCommands($root, "$root.eps", "");
+		return;
+	}
+
+  # Generate using Asymptote?
+	if (fileAvailable("$root.asy")) {
+		print MF "$root.eps: $root.asy\n";
+		print MF "\tasy $root.asy -o $root.eps\n";
+		$cleanTrash .= " $root.eps";
 		return;
 	}
 	

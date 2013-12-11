@@ -164,7 +164,7 @@ sub go {
   my $maxWarned = 0;
   open LOG, "<$root.log";
   while(my $line = <LOG>) {
-    if($line =~ /Warning/) {
+    if($line =~ /Warning/ && $line !~ /lcg/) {
       $printNext = 1;
     }
 

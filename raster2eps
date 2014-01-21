@@ -16,7 +16,7 @@ sub go {
 	my $in = $ARGV[0];
 	my $out = $ARGV[1];
 
-	my $retCode = system("sam2p $in $out");
+	my $retCode = system("sam2p \"$in\" \"$out\"");
 	if($retCode == 0 && $in !~ /\.gif$/) {
 		exit $retcode;
 	} else {

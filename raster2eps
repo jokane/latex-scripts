@@ -22,7 +22,7 @@ sub go {
 	} else {
 		print "raster2eps: sam2p failed.\n";
 		print "raster2eps: Reverting to convert.\n";
-		exit system("convert -verbose $in $out");
+		exit system("convert -verbose \"$in\" \"$out\"");
 	}
 	print "$in --> $out\n";
 }

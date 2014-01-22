@@ -83,11 +83,13 @@
 #    8/29/13 - Fixed bugs for \include dependencies.  (via Nick Stiffler)
 #    9/23/13 - Added partial support for Asymptote figures.  Does not yet check
 #              internal dependencies.
+#    1/22/14 - Spell check now uses .ispell_default in the current directory,
+#              rather than in the home directory.
 #
 # This software is provided without warranty of any kind.  You may distribute
 # it freely for non-commercial purposes.
 #
-# Copyright 2002-2013, Jason O'Kane
+# Copyright 2002-2014, Jason O'Kane
 
 use strict;
 
@@ -357,7 +359,7 @@ sub spellCheckCommands {
 	foreach my $file (split(/ /, $files)) {
 		if(1 == ($file =~ /(\.tex$)/)) {
 			next if (1 == (getFileWithComments($file) =~ /(texmake:noispell)/));
-			print MF "\tispell $file\n" if(!defined $done{$file});
+			print MF "\tispell -p ./.ispell_default $file\n" if(!defined $done{$file});
 			$done{$file} = 1;
 		}
 	}

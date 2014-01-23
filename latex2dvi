@@ -40,6 +40,54 @@ use Getopt::Long;
 
 use vars qw( $bibTeX );
 
+sub annotateLog {
+  my @chars = split(//, shift);
+
+  my @fileStack = ("TeX");
+  my $currentFile = "TeX";
+  my $answer = $fileStack[-1] . ":";
+  my $partialName = "";
+  my $state = 0;
+  # 0 --> normal
+  # 1 --> reading a file name
+
+  foreach my $char (@chars) {
+
+    if($state == 1) {
+      if($char =~ /[\s()]/) {
+        if(-e $partialName) {
+          $partialName =~ s/.*\///;
+          push @fileStack, $partialName;
+        } else {
+          push @fileStack, $fileStack[-1];
+        }
+        $partialName = "";
+        $state = 0;
+      } else {
+        $partialName .= $char;
+      }
+    }
+
+    if($char eq '(') {
+      $state = 1;
+    }
+
+    if($char eq ')') {
+      pop @fileStack;
+    }
+
+    $answer .= $char;
+
+    if(ord($char) == 10) {
+      $answer .= $fileStack[-1] . ":";
+    }
+  }
+
+  return $answer;
+}
+
+
+
 sub getFile {
 # Reads in a file and returns its contents.
 # Complains if the file cannot be opened.
@@ -162,8 +210,15 @@ sub go {
   my $printMax = 10;
   my $numPrinted = 0;
   my $maxWarned = 0;
-  open LOG, "<$root.log";
-  while(my $line = <LOG>) {
+
+  # Modify the log text so that we can see which files are generating which
+  # messages.
+  $log = annotateLog($log);
+
+  # Process the log file line-by-line, to decide what to show.
+  foreach my $line (split(/\n/, $log)) {
+    $line .= "\n";
+
     if($line =~ /Warning/ && $line !~ /lcg/) {
       $printNext = 1;
     }
@@ -199,7 +254,7 @@ sub go {
     }
 
   }
-  close LOG;
+
 
   # Let the user know if we just gave up.
   if($k >= $maxTries) {

@@ -1,9 +1,7 @@
 - Separate dot-building logic into a new script 'dot2eps'.
 - Separate dependency-finding logic to a new script 'texdeps'.  (?)
 - Comment-tag to add a dependency regex.
-- Use ispell dictionary in current directory, not user's home.
 - Use PID-dependent temporary file name, to allow recursive texmake.
-- latex2dvi: Keep track of which file is active and label the error messages
-  accordingly.
 - latex2dvi: Check error codes for custom before/after commands.  Fail when those commands fail.
 - latex2dvi: Show errors from makeindex.
+- latex2dvi: halt-on-error?

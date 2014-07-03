@@ -85,6 +85,8 @@
 #              internal dependencies.
 #    1/22/14 - Spell check now uses .ispell_default in the current directory,
 #              rather than in the home directory.
+#    7/03/14 - More support for Asymptote figures. Now has support for internal
+#    	       dependency checking (local user modules).  (via Nick Stiffler)
 #
 # This software is provided without warranty of any kind.  You may distribute
 # it freely for non-commercial purposes.
@@ -92,7 +94,7 @@
 # Copyright 2002-2014, Jason O'Kane
 
 use strict;
-
+use Cwd;
 use vars qw(
 	$TEMPMF $PS_TO_PDF
 	@queue %enqueuedAlready @allFiles
@@ -566,9 +568,30 @@ sub epsRules {
 		return;
 	}
 
-  # Generate using Asymptote?
+  	# Generate using Asymptote
 	if (fileAvailable("$root.asy")) {
-		print MF "$root.eps: $root.asy\n";
+		# Search the Asymptote file to figure out if there are any file dependencies, such as 
+		# a local import file. Note: We assume that any local modules appear alongside 
+		# the asy code in the asy subdirectory. 
+		# 
+		# A comment in the actual Asymptote code of 
+		# 	// local-module:xxxx
+		# will be used to tell texmake that there is a local module dependency
+		my $deps ="$root.asy ";
+		my $fileWithComments = getFileWithComments("$root.asy");
+
+		while ($fileWithComments =~ s/local-module:[ \t]*(.*)//) {
+			$deps .= " asy\/$1.asy";
+		}
+
+		# set local ENV variable so Asymptote can find the local imported modules
+		my $path = Cwd::cwd();
+		my $pathvar = "$path\/asy";	
+		$ENV{'ASYMPTOTE_DIR'} = "$pathvar";
+		print STDOUT "$ENV{'ASYMPTOTE_DIR'}\n";
+
+		# set dependencies and create eps
+		print MF "$root.eps: $deps\n";
 		print MF "\tasy $root.asy -o $root.eps\n";
 		$cleanTrash .= " $root.eps";
 		return;

@@ -5,3 +5,8 @@
 - latex2dvi: Check error codes for custom before/after commands.  Fail when those commands fail.
 - latex2dvi: Show errors from makeindex.
 - latex2dvi: halt-on-error?
+- texmake: Add comment-tags for "conditions", and refuse to compile if the
+  conditions are not met.  Can prevent copy-paste errors.  Example: grep for
+  current year, don't compile if previous years appear.  Example: Match number
+  in \documentname with number in filename.  
+- fig2eps: Ignores depth selections when nolatex is active.

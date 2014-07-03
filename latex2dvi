@@ -34,6 +34,7 @@
 #                makeindex.  Useful for style files.
 #    8/10/2013 - Added "after-makeindex" and "before-makeindex".
 #    8/28/2013 - Added "before-latex".  (via Nick Stiffler)
+#    1/23/2014 - Modify the log, to show which files are generating messages.
 
 use strict;
 use Getopt::Long;

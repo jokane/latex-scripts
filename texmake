@@ -230,9 +230,6 @@ sub asyDeps {
 	my $dir = $fileName;
 	$dir =~ s/([^\/]*)$//;
 
-  print "Checking $fileName.\n";
-  print "Dir=$dir\n";
-
   # Read the file and look for "import" statements.
   my $file = getFile($fileName);
   while($file =~ s/import\s*([^;]*);//) {
@@ -615,7 +612,6 @@ sub epsRules {
     } else {
       $prefix = "";
     }
-    print "prefix=$prefix\n";
 
     # That's it.
 		print MF "$root.eps: $root.asy $deps\n";

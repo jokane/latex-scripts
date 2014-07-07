@@ -594,7 +594,6 @@ sub epsRules {
 
   # Generate using Asymptote?
 	if (fileAvailable("$root.asy")) {
-<<<<<<< HEAD
     # Two things are tricky here:
     # 1. We need depend on any "local modules" (that is, include files)
     # mentioned in the Asymptote file.
@@ -617,23 +616,6 @@ sub epsRules {
 		print MF "$root.eps: $root.asy $deps\n";
 		print MF "\t$prefix";
     print MF "asy $root.asy -o $root.eps\n";
-=======
-		# Search the Asymptote file to figure out if there are any file dependencies, such as 
-		# a local import file. Note: We assume that any local modules appear alongside 
-		# the asy code in the asy subdirectory. 
-		# 
-		# A comment in the actual Asymptote code of 
-		# 	// local-module:xxxx
-		# will be used to tell texmake that there is a local module dependency
-		my $deps = asyDepends("$root");
-
-		# get the filename from $root (could potentially be a path ex. asy/xxx)
-		my $fname = basename($root);
-
-		# set dependencies and create eps
-		print MF "$root.eps: $deps\n";
-		print MF "\tcd asy;  asy $fname.asy -o $fname.eps;  cd ..\n";
->>>>>>> fbecbec35cb7f416dd290efb7e9bbfcc1327b988
 		$cleanTrash .= " $root.eps";
 		return;
 	}

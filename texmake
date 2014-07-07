@@ -85,8 +85,8 @@
 #              internal dependencies.
 #    1/22/14 - Spell check now uses .ispell_default in the current directory,
 #              rather than in the home directory.
-#    7/03/14 - More support for Asymptote figures. Now has support for internal
-#    	       dependency checking (local user modules).  (via Nick Stiffler)
+#    7/07/14 - More support for Asymptote figures. Now checks for internal
+#              dependencies (local user modules).   (via Nick Stiffler)
 #
 # This software is provided without warranty of any kind.  You may distribute
 # it freely for non-commercial purposes.
@@ -94,9 +94,9 @@
 # Copyright 2002-2014, Jason O'Kane
 
 use strict;
-use Cwd;
+
 use vars qw(
-	$TEMPMF $PS_TO_PDF
+  TEMPMF $PS_TO_PDF
 	@queue %enqueuedAlready @allFiles
 	$cleanTrash $bareTrash $staticMakefileContents
 );

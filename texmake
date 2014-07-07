@@ -598,10 +598,29 @@ sub epsRules {
 
   # Generate using Asymptote?
 	if (fileAvailable("$root.asy")) {
-    # Look for any "local modules" (that is, include files) mentioned in
-    # the Asymptote file.
-		print MF "$root.eps: $root.asy " . asyDeps("$root.asy") . "\n";
-		print MF "\tasy $root.asy -o $root.eps\n";
+    # Two things are tricky here:
+    # 1. We need depend on any "local modules" (that is, include files)
+    # mentioned in the Asymptote file.
+    my $deps = asyDeps("$root.asy");
+
+    # 2. Those local modules may be in the same directory as the source file,
+    # so we need to tell Asymptote to look there.
+    my $dir = $root;
+	  $dir =~ s/([^\/]*)$//;
+    my $prefix;
+    if($dir ne '') {
+      $prefix = "ASYMPTOTE_DIR=";
+      $prefix .= "$ENV{'ASYMPTOTE_DIR'}:" if(defined $ENV{'ASYMPTOTE_DIR'});
+      $prefix .= "$dir ";
+    } else {
+      $prefix = "";
+    }
+    print "prefix=$prefix\n";
+
+    # That's it.
+		print MF "$root.eps: $root.asy $deps\n";
+		print MF "\t$prefix";
+    print MF "asy $root.asy -o $root.eps\n";
 		$cleanTrash .= " $root.eps";
 		return;
 	}

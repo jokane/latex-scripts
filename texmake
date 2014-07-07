@@ -94,7 +94,7 @@
 # Copyright 2002-2014, Jason O'Kane
 
 use strict;
-use Cwd;
+use File::Basename;
 use vars qw(
 	$TEMPMF $PS_TO_PDF
 	@queue %enqueuedAlready @allFiles
@@ -577,26 +577,19 @@ sub epsRules {
 		# A comment in the actual Asymptote code of 
 		# 	// local-module:xxxx
 		# will be used to tell texmake that there is a local module dependency
-		my $deps ="$root.asy ";
-		my $fileWithComments = getFileWithComments("$root.asy");
+		my $deps = asyDepends("$root");
 
-		while ($fileWithComments =~ s/local-module:[ \t]*(.*)//) {
-			$deps .= " asy\/$1.asy";
-		}
-
-		# set local ENV variable so Asymptote can find the local imported modules
-		my $path = Cwd::cwd();
-		my $pathvar = "$path\/asy";	
-		$ENV{'ASYMPTOTE_DIR'} = "$pathvar";
-		print STDOUT "$ENV{'ASYMPTOTE_DIR'}\n";
+		# get the filename from $root (could potentially be a path ex. asy/xxx)
+		my $fname = basename($root);
 
 		# set dependencies and create eps
 		print MF "$root.eps: $deps\n";
-		print MF "\tasy $root.asy -o $root.eps\n";
+		print MF "\tcd asy;  asy $fname.asy -o $fname.eps;  cd ..\n";
 		$cleanTrash .= " $root.eps";
 		return;
 	}
-	
+
+
 
 	# Convert from a DIA diagram?
 	if (fileAvailable("$root.dia")) {
@@ -672,6 +665,23 @@ sub epsRules {
 	# Bad news: We couldn't find a way to create this file.
 	print "texmake: no source to build: $root.eps\n";
 }
+
+sub asyDepends {
+	my ($item) = @_;
+
+	# print STDOUT "This is the item: $item\n";
+	my $deps ="$item.asy ";
+	my $file = getFile("$item.asy");
+
+	while ($file =~ s/import[ \t]*(.*)[ \t]*;//) {
+		if(-e "asy\/$1.asy"){
+			$deps .= asyDepends("asy\/$1");
+		}
+	}
+	#print STDOUT "$item Depends on : $deps\n";
+	return $deps;	
+}
+
 
 sub main {
 	# Open the temporary makefile that we're going to generate.  If there's already

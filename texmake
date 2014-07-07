@@ -222,6 +222,34 @@ sub figDeps {
 	return $ret;
 }
 
+sub asyDeps {
+# Searches an Asymptote file, looking for dependencies.
+  my $fileName = shift;
+  my $ret = "";
+
+	my $dir = $fileName;
+	$dir =~ s/([^\/]*)$//;
+
+  print "Checking $fileName.\n";
+  print "Dir=$dir\n";
+
+  # Read the file and look for "import" statements.
+  my $file = getFile($fileName);
+  while($file =~ s/import\s*([^;]*);//) {
+    # Since "import" is used for both "global modules" (which we don't care
+    # about) and "local modules" (which we do), we need to check whether the
+    # file exists.  If it does, add a dependency to it, and check it
+    # recursively for other deps.
+    my $includedFile = "$dir$1.asy";
+    if(fileAvailable($includedFile)) {
+      $ret .= "$includedFile " . asyDeps($includedFile);
+    }
+  }
+
+  return $ret;
+}
+
+
 sub figCommands {
 # Generate commands to build an EPS file from a FIG file.
 	my $root = shift;
@@ -568,30 +596,11 @@ sub epsRules {
 		return;
 	}
 
-  	# Generate using Asymptote
+  # Generate using Asymptote?
 	if (fileAvailable("$root.asy")) {
-		# Search the Asymptote file to figure out if there are any file dependencies, such as 
-		# a local import file. Note: We assume that any local modules appear alongside 
-		# the asy code in the asy subdirectory. 
-		# 
-		# A comment in the actual Asymptote code of 
-		# 	// local-module:xxxx
-		# will be used to tell texmake that there is a local module dependency
-		my $deps ="$root.asy ";
-		my $fileWithComments = getFileWithComments("$root.asy");
-
-		while ($fileWithComments =~ s/local-module:[ \t]*(.*)//) {
-			$deps .= " asy\/$1.asy";
-		}
-
-		# set local ENV variable so Asymptote can find the local imported modules
-		my $path = Cwd::cwd();
-		my $pathvar = "$path\/asy";	
-		$ENV{'ASYMPTOTE_DIR'} = "$pathvar";
-		print STDOUT "$ENV{'ASYMPTOTE_DIR'}\n";
-
-		# set dependencies and create eps
-		print MF "$root.eps: $deps\n";
+    # Look for any "local modules" (that is, include files) mentioned in
+    # the Asymptote file.
+		print MF "$root.eps: $root.asy " . asyDeps("$root.asy") . "\n";
 		print MF "\tasy $root.asy -o $root.eps\n";
 		$cleanTrash .= " $root.eps";
 		return;

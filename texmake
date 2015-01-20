@@ -290,6 +290,7 @@ sub fileDeps {
 	) {
 		my $picture = $2;
 		next if($picture =~ /^#[0-9]*$/); # ignore passed-in parameters, ie #1
+		next if($picture =~ /\\/); # ignore filenames containing macros
 		if(!($picture =~ /\.[^\/]*$/)) {
 			$deps .= " $picture.$graphicsExt";
 			enqueueFile("$picture.$graphicsExt");

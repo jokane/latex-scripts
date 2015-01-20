@@ -108,7 +108,7 @@ sub getFile {
 
 sub runLaTeX {
   my $root = shift;
-  my $cmd = "latex --interaction batchmode $root > /dev/null";
+  my $cmd = "latex --shell-escape --interaction batchmode $root > /dev/null";
   print "$cmd\n";
   system($cmd);
 }

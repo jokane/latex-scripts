@@ -35,6 +35,9 @@
 #    8/10/2013 - Added "after-makeindex" and "before-makeindex".
 #    8/28/2013 - Added "before-latex".  (via Nick Stiffler)
 #    1/23/2014 - Modify the log, to show which files are generating messages.
+#    1/28/2015 - Fix return codes.  Now uses the actual return code from the
+#                last LaTeX run, instead of trying to make one up.  This
+#                prevents returning 0 when something actually did go wrong.
 
 use strict;
 use Getopt::Long;
@@ -237,7 +240,7 @@ sub go {
       $numPrinted++;
     }
 
-    if($line =~ /^!/) {
+    if($line =~ /:! /) {
       $printNext = 4;
       $numPrinted++;
     }
@@ -266,7 +269,7 @@ sub go {
 
   # Remove the DVI if an error occured.
   if($retCode != 0) {
-    print "latex2dvi: Removing $root.dvi due to errors. ($retCode)\n";
+    print "latex2dvi: Removing $root.dvi due to errors.\n";
     unlink "$root.dvi";
   }
 

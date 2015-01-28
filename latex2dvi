@@ -111,6 +111,7 @@ sub runLaTeX {
   my $cmd = "latex --shell-escape --interaction batchmode $root > /dev/null";
   print "$cmd\n";
   system($cmd);
+  return ($? >> 8);
 }
 
 sub go {
@@ -148,9 +149,12 @@ sub go {
   my $k = 0;
   my $maxTries = 10;
 
+  # Keep track of the most recent return code from LaTeX.
+  my $retCode = 1;
+
   # Get a log file to start with.  LaTeX once if necessary.
   if(!-e "$root.log") {
-    runLaTeX($root);
+    $retCode = runLaTeX($root);
     $k++;
   }
   my $lastLog = getFile("$root.log");
@@ -160,7 +164,7 @@ sub go {
   my $bibOK = 0;
   my $idxOK = 0;
   while($k < $maxTries && $log ne $lastLog) {
-    runLaTeX($root);
+    $retCode = runLaTeX($root);
     $k++;
 
     if(!$bibOK) {
@@ -207,7 +211,6 @@ sub go {
   # Show the relevant parts of the output.  At the same time, figure
   # out if LaTeX was successful.
   my $printNext = 0;
-  my $retCode = 0;
   my $printMax = 10;
   my $numPrinted = 0;
   my $maxWarned = 0;
@@ -227,19 +230,16 @@ sub go {
     if($line =~ /Error/) {
       $printNext = 1;
       $numPrinted++;
-      $retCode = 1;
     }
 
     if($line =~ /Runaway/) {
       $printNext = 4;
       $numPrinted++;
-      $retCode = 1;
     }
 
     if($line =~ /^!/) {
       $printNext = 4;
       $numPrinted++;
-      $retCode = 1;
     }
 
     if($printNext > 0) {
@@ -265,7 +265,8 @@ sub go {
   }
 
   # Remove the DVI if an error occured.
-  if($retCode == 1) {
+  if($retCode != 0) {
+    print "latex2dvi: Removing $root.dvi due to errors. ($retCode)\n";
     unlink "$root.dvi";
   }
 

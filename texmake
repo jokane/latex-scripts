@@ -101,8 +101,8 @@ use vars qw(
 );
 
 $TEMPMF = "Makefile.texmake";
-#$PS_TO_PDF = "ps2pdf14 -dCompatibilityLevel=1.4 -dEmbedAllFonts=true -dPDFSETTINGS=/prepress ";  # For (better) IEEE compatibility
-$PS_TO_PDF = "ps2pdf -dNOSAFER -dEmbedAllFonts=true ";  # To work correctly with powerdot
+$PS_TO_PDF = "ps2pdf14 -dCompatibilityLevel=1.4 -dEmbedAllFonts=true -dPDFSETTINGS=/prepress ";  # For (better) IEEE compatibility
+#$PS_TO_PDF = "ps2pdf -dNOSAFER -dEmbedAllFonts=true ";  # To work correctly with powerdot
 
 sub getFile {
 # Reads in a file and returns its contents after stripping out TeX-style
@@ -127,7 +127,7 @@ sub getFileExpanded {
 # Returns the contents of a file, with any \input commands expanded.
 	my $fname = shift;
 	my $file = getFile($fname);
-	while($file =~ /\\input{([^}]*)}/) {
+	while($file =~ /\\input\{([^}]*)}/) {
 		my $inFile = $1;
 		next if($inFile =~ /\\/); # Skip names with \'s.
 		my $insert = getFileExpanded($inFile);
@@ -412,7 +412,7 @@ sub fromDVI {
 	# slides class, which also likes to be treated as landscape.
 	my $file = getFile("$root.tex");
 	if(($file =~ /documentclass\[[^]]*landscape[^]]*\]/) 
-		|| ($file =~ /documentclass\[[^\]]*]{(prosper.*)}/)
+		|| ($file =~ /documentclass\[[^\]]*]\{(prosper.*)}/)
 	) {
 		$landscape = 1;
 		$paperFlag = "-tlandscape ";
@@ -420,7 +420,7 @@ sub fromDVI {
 
 	# 1.2: Are we compiling a powerdot presentation?  If so, change the paper
 	# size accordingly.
-	if($file =~ /documentclass\[[^\]]*]{powerdot}/) {
+	if($file =~ /documentclass\[[^\]]*]\{powerdot}/) {
 		$paperFlag = " ";
 	}
 
@@ -503,6 +503,14 @@ sub epsRules {
 	if (fileAvailable("$root.jpg")) {
 		print MF "$root.eps: $root.jpg\n";
 		print MF "\traster2eps $root.jpg $root.eps\n";
+		$cleanTrash .= " $root.eps";
+		return;
+	}
+
+	# Convert from JPEG?
+	if (fileAvailable("$root.jpeg")) {
+		print MF "$root.eps: $root.jpeg\n";
+		print MF "\traster2eps $root.jpeg $root.eps\n";
 		$cleanTrash .= " $root.eps";
 		return;
 	}

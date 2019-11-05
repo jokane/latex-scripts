@@ -30,10 +30,12 @@ sub go {
 	my $fig2devOpts = "";
 	my $preamble = "";
 	my $nocleanup = 0;
+	my $outputFileName = "";
 	if(!GetOptions(
 		"fig2dev=s" => \$fig2devOpts,
 		"preamble=s" => \$preamble,
-		"nocleanup!" => \$nocleanup
+		"nocleanup!" => \$nocleanup,
+    "output=s" => \$outputFileName
 	)) {
 		exit(1);
 	}
@@ -64,7 +66,12 @@ sub go {
 	my $epstemp = "fig2ps-$base.eps";
 	my $log     = "fig2ps-$base.log";  # These last two are created by LaTeX.
 	my $aux     = "fig2ps-$base.aux";  # We never use them, but clean them up anyway.
-	my $eps     = "$base.eps";
+  my $eps;
+  if($outputFileName eq "") {
+    $eps = "$base.eps";
+  } else {
+    $eps = $outputFileName;
+  }
 	
 	# Check for the string "nolatex" in the original fig.
 	if (0 == system("grep nolatex $fig > /dev/null")) {
